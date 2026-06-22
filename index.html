@@ -1,0 +1,1066 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Espace Revendeur — My Box TV</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+<style>
+body { font-family: 'Segoe UI', sans-serif; background: #121212; color: #eee; margin: 0; }
+
+/* LOGIN */
+#login-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 999; display: flex; align-items: center; justify-content: center; padding:20px; box-sizing:border-box; }
+.login-box { background: #1e1e1e; padding: 40px; border-radius: 14px; border: 1px solid #2a2a2a; text-align: center; width:100%; max-width:360px; }
+.login-box .login-icon { width:64px; height:64px; border-radius:16px; background:linear-gradient(135deg,#00bfff,#0080cc); display:flex; align-items:center; justify-content:center; font-size:26px; margin:0 auto 18px; color:#fff; }
+.login-box h2 { color:#00bfff; margin: 6px 0 4px; font-size:18px; }
+.login-box p.sub { color:#666; font-size:12px; margin:0 0 22px; }
+.login-box input { width: 100%; box-sizing:border-box; padding: 12px 14px; display: block; margin: 0 0 12px; border-radius:8px; border:1px solid #333; background:#111; color:#fff; font-size:13px; }
+.login-box input:focus { outline:none; border-color:#00bfff; }
+.login-box button#btn-login { width: 100%; padding:13px; background:linear-gradient(135deg,#00bfff,#0080cc); font-weight:800; letter-spacing:.5px; }
+.login-box button#btn-login:hover { filter:brightness(1.1); }
+#login-error { color:#ff4444; margin-top:12px; font-size:12.5px; min-height:16px; }
+
+input, select { padding: 10px; border-radius: 6px; border: 1px solid #333; background: #111; color: white; margin: 5px 0; font-size:13px; }
+input:focus, select:focus { outline:none; border-color:#00bfff; }
+button { padding: 10px 20px; background: #00bfff; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; transition: background .2s, filter .2s; }
+button:hover { filter: brightness(1.12); }
+
+#dashboard { display: none; padding: 20px; max-width: 1300px; margin: 0 auto; }
+.header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 26px; border-bottom: 2px solid #222; padding-bottom: 18px; flex-wrap: wrap; gap: 12px; }
+.header h1 { color: #00bfff; margin: 0; display:flex; align-items:center; gap:14px; font-size:19px; }
+.header h1 .logo-fallback { width:46px; height:46px; border-radius:10px; background:#1a1a1a; border:1px solid #2a2a2a; display:flex; align-items:center; justify-content:center; font-size:18px; color:#00bfff; }
+.header h1 img.logo-img { width:46px; height:46px; border-radius:10px; object-fit:contain; background:#fff; padding:3px; }
+.header .sub-rsid { font-size:11px; color:#555; font-family:monospace; font-weight:400; background:rgba(0,191,255,.08); padding:2px 9px; border-radius:20px; margin-left:6px; }
+
+.tabs { display: flex; gap: 10px; margin-bottom: 22px; flex-wrap: wrap; }
+.tab-btn { background: #1a1a1a; border:1px solid #2a2a2a; padding: 10px 18px; border-radius: 8px; cursor: pointer; color: #aaa; font-weight: bold; font-size:13px; }
+.tab-btn.active { background: #00bfff; color: white; border-color:#00bfff; }
+.section { display: none; }
+.section.active { display: block; }
+
+table { width: 100%; border-collapse: collapse; background: #1e1e1e; border-radius: 8px; overflow: hidden; }
+th, td { padding: 13px 15px; text-align: left; border-bottom: 1px solid #2a2a2a; font-size: 13px; }
+th { background: #252525; color: #aaa; font-size: 11px; text-transform: uppercase; letter-spacing: .5px; }
+tr:hover { background: #242424; }
+
+.action-btn { padding: 6px 10px; font-size: 12px; margin-right: 4px; border-radius: 4px; cursor: pointer; border: none; color: white; }
+.btn-pdf  { background: #28a745; }
+.btn-edit { background: #007bff; }
+.btn-del  { background: #ff4444; }
+.btn-rst  { background: #555; }
+
+.add-form { background: #1e1e1e; border: 1px solid #2a2a2a; padding: 18px 20px; border-radius: 10px; margin-bottom: 20px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.add-form h3 { margin: 0; color: #aaa; font-size: 13px; }
+
+.badge-vie    { background: rgba(0,170,255,.2); color: #0af;    padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight:700; }
+.badge-active { background: rgba(46,204,113,.2); color: #2ecc71; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight:700; }
+.badge-exp    { background: rgba(229,9,20,.2);   color: #e50914; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight:700; }
+
+.dot-online  { display:inline-block; width:8px; height:8px; background:#2ecc71; border-radius:50%; margin-right:5px; box-shadow:0 0 6px #2ecc71; animation:pulse-green 1.5s ease-in-out infinite; vertical-align:middle; flex-shrink:0; }
+.dot-offline { display:inline-block; width:8px; height:8px; background:#333;    border-radius:50%; margin-right:5px; vertical-align:middle; flex-shrink:0; }
+@keyframes pulse-green { 0%,100%{box-shadow:0 0 4px rgba(46,204,113,.6)} 50%{box-shadow:0 0 12px rgba(46,204,113,.9),0 0 22px rgba(46,204,113,.3)} }
+.badge-online  { display:inline-flex; align-items:center; background:rgba(46,204,113,.12); color:#2ecc71; border:1px solid rgba(46,204,113,.3); padding:2px 9px; border-radius:12px; font-size:11px; font-weight:700; white-space:nowrap; }
+.badge-offline { display:inline-flex; align-items:center; background:rgba(255,255,255,.03); color:#444;    border:1px solid #252525; padding:2px 9px; border-radius:12px; font-size:11px; font-weight:700; white-space:nowrap; }
+.presence-time { font-size:10px; color:#555; margin-top:2px; }
+.presence-dur  { font-size:11px; color:#888; font-family:monospace; }
+
+#stats-bar { display: flex; gap: 16px; margin-bottom: 24px; flex-wrap: wrap; }
+.stat-card { background: #1e1e1e; border: 1px solid #2a2a2a; border-radius: 10px; padding: 16px 22px; flex: 1; min-width: 130px; }
+.stat-val  { font-size: 28px; font-weight: 900; color: #00bfff; }
+.stat-lbl  { font-size: 11px; color: #666; margin-top: 2px; }
+
+.toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(60px); background: #1e1e1e; border: 1px solid #333; color: #eee; padding: 12px 24px; border-radius: 30px; z-index: 9999; font-size: 13px; transition: transform .3s ease; pointer-events:none; }
+.toast.show { transform: translateX(-50%) translateY(0); }
+
+@media(max-width:600px){
+    .add-form input[style*="width:400px"] { width: 100% !important; }
+    th:nth-child(3), td:nth-child(3) { display:none; }
+}
+
+#tarif-modal-overlay.open { display:flex !important; }
+.tarif-card { background:#1e1e1e; border:1px solid #2a2a2a; border-radius:10px; padding:18px; position:relative; overflow:hidden; transition:border-color .2s; }
+.tarif-card:hover { border-color:#444; }
+.tarif-card.inactive { opacity:.45; }
+.tarif-card .card-badge { position:absolute; top:12px; right:12px; padding:2px 9px; border-radius:20px; font-size:11px; font-weight:700; }
+.tarif-card .card-price { font-size:30px; font-weight:900; color:#fff; }
+.tarif-card .card-price-old { font-size:14px; color:#555; text-decoration:line-through; }
+.tarif-card .card-label { font-size:13px; color:#aaa; margin-top:4px; }
+.tarif-card .card-actions { display:flex; gap:6px; margin-top:14px; flex-wrap:wrap; }
+.tf-toggle-btn { padding:4px 12px; font-size:12px; border-radius:4px; cursor:pointer; border:none; background:#333; color:#eee; transition:background .2s; }
+.tf-toggle-btn:hover { background:#444; }
+
+.brand-card { background:#1a1a1a; border:1px solid #2a2a2a; border-radius:12px; padding:22px; margin-bottom:18px; }
+.brand-card h3 { margin:0 0 4px; font-size:15px; color:#fff; }
+.brand-card p.hint { color:#555; font-size:12px; margin:0 0 18px; }
+.brand-row { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px; }
+@media(max-width:650px){ .brand-row { grid-template-columns:1fr; } }
+.brand-row label { font-size:11px; color:#888; display:block; margin-bottom:5px; text-transform:uppercase; letter-spacing:.5px; }
+.brand-row input, .brand-row select { width:100%; box-sizing:border-box; background:#111; border:1px solid #2a2a2a; }
+.brand-logo-preview { width:64px; height:64px; border-radius:12px; background:#fff; object-fit:contain; padding:4px; border:1px solid #2a2a2a; flex-shrink:0; }
+.brand-logo-preview-empty { width:64px; height:64px; border-radius:12px; background:#111; border:1px solid #2a2a2a; display:flex; align-items:center; justify-content:center; color:#333; font-size:22px; flex-shrink:0; }
+.status-pill { font-size:11px; font-weight:700; padding:4px 12px; border-radius:20px; display:inline-flex; align-items:center; gap:6px; }
+.status-pill.on  { background:rgba(46,204,113,.15); color:#2ecc71; }
+.status-pill.off { background:rgba(229,9,20,.15); color:#e50914; }
+
+</style>
+</head>
+<body>
+
+<!-- ========== LOGIN ========== -->
+<div id="login-overlay">
+    <div class="login-box">
+        <div class="login-icon"><i class="fas fa-store"></i></div>
+        <h2>ESPACE REVENDEUR</h2>
+        <p class="sub">My Box TV — Panneau d'administration</p>
+        <input type="email" id="login-email" placeholder="Email de connexion" autocomplete="username">
+        <input type="password" id="login-pass" placeholder="Mot de passe" autocomplete="current-password">
+        <button id="btn-login" type="button"><i class="fas fa-sign-in-alt"></i> SE CONNECTER</button>
+        <div id="login-error"></div>
+    </div>
+</div>
+
+<!-- ========== DASHBOARD ========== -->
+<div id="dashboard">
+    <div class="header">
+        <h1>
+            <span id="header-logo-wrap"><span class="logo-fallback"><i class="fas fa-store"></i></span></span>
+            <span>
+                <span id="header-name">REVENDEUR</span>
+                <span class="sub-rsid" id="header-rsid">—</span>
+            </span>
+        </h1>
+        <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+            <button onclick="downloadBackup()" style="background:#1a1a1a;border:1px solid #2a2a2a;color:#aaa;font-size:12px;">
+                <i class="fas fa-download"></i> BACKUP CSV
+            </button>
+            <button onclick="loadAllData()" style="background:#1a1a1a;border:1px solid #2a2a2a;color:#aaa;font-size:12px;">
+                <i class="fas fa-sync-alt"></i> ACTUALISER
+            </button>
+            <button onclick="logoutReseller()" style="background:#2a1010;border:1px solid #4a1a1a;color:#ff6b6b;font-size:12px;">
+                <i class="fas fa-sign-out-alt"></i> DÉCONNEXION
+            </button>
+        </div>
+    </div>
+
+    <div id="stats-bar">
+        <div class="stat-card"><div class="stat-val" id="st-total">—</div><div class="stat-lbl">Mes clients</div></div>
+        <div class="stat-card"><div class="stat-val" id="st-active">—</div><div class="stat-lbl">Actifs</div></div>
+        <div class="stat-card"><div class="stat-val" id="st-vie">—</div><div class="stat-lbl">À vie</div></div>
+        <div class="stat-card" style="border-color:rgba(46,204,113,.25);"><div class="stat-val" id="st-online" style="color:#2ecc71;">—</div><div class="stat-lbl" style="display:flex;align-items:center;gap:5px;"><span class="dot-online" style="margin:0;"></span>En ligne</div></div>
+        <div class="stat-card"><div class="stat-val" id="st-tarifs">—</div><div class="stat-lbl">Mes offres actives</div></div>
+    </div>
+
+    <div class="tabs">
+        <button class="tab-btn active" onclick="showTab('users-section',event)"><i class="fas fa-users"></i> MES CLIENTS</button>
+        <button class="tab-btn" onclick="showTab('tarifs-section',event);loadTarifs()"><i class="fas fa-tags"></i> MES TARIFS</button>
+        <button class="tab-btn" onclick="showTab('message-section',event)"><i class="fas fa-bullhorn"></i> MESSAGE</button>
+        <button class="tab-btn" onclick="showTab('branding-section',event)"><i class="fas fa-palette"></i> BRANDING & PAIEMENT</button>
+    </div>
+
+    <!-- MES CLIENTS -->
+    <div id="users-section" class="section active">
+        <div class="add-form">
+            <h3>Nouveau Client :</h3>
+            <input type="text" id="new-key" placeholder="ID (vide = auto)" style="width:160px;">
+            <select id="new-days">
+                <option value="30">30 Jours</option>
+                <option value="60">60 Jours</option>
+                <option value="90">3 Mois</option>
+                <option value="365">1 An</option>
+                <option value="VIE">À VIE</option>
+            </select>
+            <select id="new-screens">
+                <option value="1">1 Écran</option>
+                <option value="2">2 Écrans</option>
+                <option value="4">4 Écrans</option>
+                <option value="10">10 Écrans</option>
+                <option value="50">50 Écrans</option>
+            </select>
+            <input type="text" id="new-msg" placeholder="Message perso (opt.)" style="width:200px;">
+            <button onclick="addUser()"><i class="fas fa-plus"></i> CRÉER & PDF</button>
+        </div>
+        <table>
+            <thead><tr><th>CLÉ</th><th>DURÉE</th><th>ÉCRANS</th><th>APPAREILS</th><th>DATE</th><th>MESSAGE</th><th>EN LIGNE</th><th>DERNIÈRE VUE</th><th>DURÉE TOTALE</th><th>ACTIONS</th></tr></thead>
+            <tbody id="users-body"></tbody>
+        </table>
+    </div>
+
+    <!-- MES TARIFS -->
+    <div id="tarifs-section" class="section">
+
+        <div id="tarif-modal-overlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.75); z-index:500; align-items:center; justify-content:center;">
+            <div style="background:#1e1e1e; border:1px solid #333; border-radius:12px; padding:28px 30px; width:500px; max-width:95vw; position:relative;">
+                <h3 id="tarif-modal-title" style="margin:0 0 20px; color:#00bfff; font-size:16px;"><i class="fas fa-tags"></i> NOUVEAU TARIF</h3>
+
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                    <div>
+                        <label style="font-size:11px; color:#888; display:block; margin-bottom:4px;">Label Écran</label>
+                        <input id="tf-label-ecran" type="text" placeholder="Ex: 1 Écran" style="width:100%;">
+                    </div>
+                    <div>
+                        <label style="font-size:11px; color:#888; display:block; margin-bottom:4px;">Label Durée</label>
+                        <input id="tf-label-duree" type="text" placeholder="Ex: 1 Mois" style="width:100%;">
+                    </div>
+                    <div>
+                        <label style="font-size:11px; color:#888; display:block; margin-bottom:4px;">Nb Écrans</label>
+                        <input id="tf-screens" type="number" min="1" placeholder="1" style="width:100%;">
+                    </div>
+                    <div>
+                        <label style="font-size:11px; color:#888; display:block; margin-bottom:4px;">Durée (jours)</label>
+                        <input id="tf-days" type="number" min="1" placeholder="30" style="width:100%;">
+                    </div>
+                    <div>
+                        <label style="font-size:11px; color:#888; display:block; margin-bottom:4px;">Prix normal (FCFA)</label>
+                        <input id="tf-prix" type="number" min="0" placeholder="300" style="width:100%;">
+                    </div>
+                    <div>
+                        <label style="font-size:11px; color:#888; display:block; margin-bottom:4px;">Prix promo (opt.)</label>
+                        <input id="tf-prix-promo" type="number" min="0" placeholder="Vide si aucun" style="width:100%;">
+                    </div>
+                    <div>
+                        <label style="font-size:11px; color:#888; display:block; margin-bottom:4px;">Badge texte (opt.)</label>
+                        <input id="tf-badge" type="text" placeholder="Ex: - 75%" style="width:100%;">
+                    </div>
+                    <div>
+                        <label style="font-size:11px; color:#888; display:block; margin-bottom:4px;">Couleur badge</label>
+                        <div style="display:flex; gap:6px; align-items:center;">
+                            <input id="tf-badge-color" type="color" value="#00bfff" style="width:46px; height:38px; padding:2px; border-radius:5px; cursor:pointer; border:1px solid #444; background:#222;">
+                            <input id="tf-badge-color-text" type="text" value="#00bfff" placeholder="#00bfff" style="flex:1;" oninput="document.getElementById('tf-badge-color').value=this.value">
+                        </div>
+                    </div>
+                    <div>
+                        <label style="font-size:11px; color:#888; display:block; margin-bottom:4px;">Ordre d'affichage</label>
+                        <input id="tf-ordre" type="number" min="0" placeholder="10" style="width:100%;">
+                    </div>
+                    <div style="display:flex; align-items:flex-end;">
+                        <label style="display:flex; align-items:center; gap:8px; cursor:pointer; padding-bottom:8px;">
+                            <input id="tf-actif" type="checkbox" checked style="width:16px; height:16px; accent-color:#00bfff; cursor:pointer;">
+                            <span style="font-size:13px; color:#ccc;">Tarif actif</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div style="display:flex; gap:10px; margin-top:22px; justify-content:flex-end;">
+                    <button onclick="closeTarifModal()" style="background:#333; padding:10px 22px;">Annuler</button>
+                    <button id="tarif-save-btn" onclick="saveTarif()" style="padding:10px 26px;"><i class="fas fa-save"></i> SAUVEGARDER</button>
+                </div>
+
+                <input type="hidden" id="tf-edit-id" value="">
+            </div>
+        </div>
+
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:10px;">
+            <div style="color:#666; font-size:13px;"><i class="fas fa-info-circle"></i> Ces offres s'affichent uniquement sur VOTRE plateforme.</div>
+            <button onclick="openTarifModal()" style="font-size:13px;"><i class="fas fa-plus"></i> NOUVEAU TARIF</button>
+        </div>
+
+        <div id="tarifs-grid" style="display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:16px; margin-bottom:20px;"></div>
+
+        <table>
+            <thead><tr><th>ID</th><th>OFFRE</th><th>ÉCRANS</th><th>JOURS</th><th>PRIX</th><th>PROMO</th><th>BADGE</th><th>ORDRE</th><th>ACTIF</th><th>ACTIONS</th></tr></thead>
+            <tbody id="tarifs-body"></tbody>
+        </table>
+    </div>
+
+    <!-- MESSAGE -->
+    <div id="message-section" class="section">
+        <div style="background:#1e1e1e; border:1px solid #2a2a2a; padding:24px; border-radius:10px; max-width:600px;">
+            <h3 style="margin-top:0; color:#aaa;"><i class="fas fa-bullhorn"></i> Message d'accueil</h3>
+            <p style="font-size:12px; color:#555;">
+                Ce message est <strong style="color:#888;">global à toute la plateforme My Box TV</strong> (géré par le Super Admin).
+                Vous pouvez le consulter ici, mais il ne peut être modifié que depuis le Super Admin.
+            </p>
+            <input type="text" id="global-msg-input" style="width:100%; padding:14px; box-sizing:border-box; color:#777;" placeholder="Aucun message actif" readonly>
+        </div>
+    </div>
+
+    <!-- BRANDING & PAIEMENT -->
+    <div id="branding-section" class="section">
+
+        <div class="brand-card">
+            <h3><i class="fas fa-palette"></i> Identité de votre plateforme</h3>
+            <p class="hint">Ces informations apparaissent sur votre application client (logo, nom, contact).</p>
+            <div style="display:flex; gap:16px; align-items:center; margin-bottom:16px; flex-wrap:wrap;">
+                <span id="brand-logo-preview-wrap"><span class="brand-logo-preview-empty"><i class="fas fa-store"></i></span></span>
+                <div style="flex:1; min-width:220px;">
+                    <label style="font-size:11px; color:#888; display:block; margin-bottom:4px;">URL DU LOGO</label>
+                    <input id="bd-logo" type="text" placeholder="https://..." style="width:100%;" oninput="_updateBrandLogoPreview()">
+                </div>
+            </div>
+            <div class="brand-row">
+                <div>
+                    <label>NOM DE LA PLATEFORME</label>
+                    <input id="bd-name" type="text" placeholder="Ex: Mali Box">
+                </div>
+                <div>
+                    <label>TÉLÉPHONE / CONTACT (WhatsApp)</label>
+                    <input id="bd-phone" type="text" placeholder="+223 XX XX XX XX">
+                </div>
+            </div>
+            <div style="display:flex; gap:10px; justify-content:flex-end;">
+                <button onclick="saveBranding()" style="padding:10px 22px;"><i class="fas fa-save"></i> ENREGISTRER</button>
+            </div>
+        </div>
+
+        <div class="brand-card">
+            <h3><i class="fas fa-credit-card"></i> Configuration du paiement</h3>
+            <p class="hint">Renseignez votre passerelle de paiement pour que vos clients puissent payer en ligne. Laissez vide pour rester en mode WhatsApp uniquement.</p>
+            <div class="brand-row">
+                <div>
+                    <label>PROVIDER</label>
+                    <select id="bd-pay-provider">
+                        <option value="">— Non configuré (WhatsApp uniquement) —</option>
+                        <option value="kkiapay">KKiaPay (Bénin)</option>
+                        <option value="fedapay">FedaPay (Bénin)</option>
+                        <option value="cinetpay">CinetPay (CI/Mali/SN)</option>
+                        <option value="paydunia">PayDunya (Sénégal)</option>
+                        <option value="wave">Wave (CI/SN)</option>
+                        <option value="orange">Orange Money</option>
+                        <option value="notchpay">NotchPay (Cameroun)</option>
+                        <option value="flexpay">FlexPay (Congo)</option>
+                    </select>
+                </div>
+                <div>
+                    <label>CLÉ PUBLIQUE</label>
+                    <input id="bd-pay-pubkey" type="text" placeholder="public_key...">
+                </div>
+            </div>
+            <div class="brand-row">
+                <div>
+                    <label>SITE ID (CinetPay uniquement)</label>
+                    <input id="bd-pay-siteid" type="text" placeholder="site_id...">
+                </div>
+                <div style="display:flex; align-items:flex-end; gap:10px;">
+                    <span class="status-pill" id="bd-pay-status-pill"><i class="fas fa-circle"></i> —</span>
+                </div>
+            </div>
+            <div style="display:flex; gap:10px; justify-content:flex-end;">
+                <button onclick="saveBranding()" style="padding:10px 22px;"><i class="fas fa-save"></i> ENREGISTRER</button>
+            </div>
+        </div>
+
+        <div class="brand-card" style="border-color:rgba(0,191,255,.25);">
+            <h3 style="color:#00bfff;"><i class="fas fa-link"></i> Lien de votre source TV</h3>
+            <p class="hint">Lien M3U utilisé par votre plateforme — modifiable uniquement par le Super Admin pour des raisons techniques.</p>
+            <input id="bd-m3u" type="text" readonly style="width:100%; color:#777; box-sizing:border-box;" placeholder="Non configuré">
+        </div>
+
+        <div class="brand-card" style="border-color:rgba(229,9,20,.25);">
+            <h3 style="color:#ff6b6b;"><i class="fas fa-key"></i> Sécurité du compte</h3>
+            <p class="hint">Modifiez le mot de passe utilisé pour vous connecter à cet espace.</p>
+            <div class="brand-row">
+                <div>
+                    <label>NOUVEAU MOT DE PASSE</label>
+                    <input id="bd-new-pass" type="text" placeholder="Laisser vide pour ne pas changer">
+                </div>
+                <div style="display:flex; align-items:flex-end;">
+                    <button onclick="changeResellerPassword()" style="padding:10px 22px; background:#3a1a1a; border:1px solid #5a2020;"><i class="fas fa-shield-alt"></i> CHANGER LE MOT DE PASSE</button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// =====================================================
+// CONFIGURATION SUPABASE
+// =====================================================
+const SUPABASE_URL = "https://yvcdadenofftnbljutwk.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl2Y2RhZGVub2ZmdG5ibGp1dHdrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI4NzQ0ODIsImV4cCI6MjA4ODQ1MDQ4Mn0.xqJzLpQszFmph599FBIvdE7NF88_i-JkABG-aSrAndE";
+
+const SB_HEADERS = {
+    'apikey': SUPABASE_KEY,
+    'Authorization': 'Bearer ' + SUPABASE_KEY,
+    'Content-Type': 'application/json',
+    'Prefer': 'return=representation'
+};
+const SB_HEADERS_MINIMAL = {
+    'apikey': SUPABASE_KEY,
+    'Authorization': 'Bearer ' + SUPABASE_KEY,
+    'Content-Type': 'application/json',
+    'Prefer': 'return=minimal'
+};
+
+async function _sbFetch(url, opts, retries, timeout) {
+    retries = retries || 0;
+    timeout = timeout || 20000;
+    const controller = new AbortController();
+    const tid = setTimeout(function(){ controller.abort(); }, timeout);
+    try {
+        const res = await fetch(url, Object.assign({}, opts, { signal: controller.signal }));
+        clearTimeout(tid);
+        return res;
+    } catch(e) {
+        clearTimeout(tid);
+        if (retries < 2 && (e.name === 'AbortError' || e.name === 'TypeError')) {
+            await new Promise(function(r){ setTimeout(r, 1000 * (retries + 1)); });
+            return _sbFetch(url, opts, retries + 1, timeout);
+        }
+        if (e.name === 'AbortError') throw new Error('Délai dépassé — Supabase ne répond pas. Vérifiez votre connexion.');
+        throw e;
+    }
+}
+
+async function sbGet(table, params) {
+    const q = params ? '?' + params : '';
+    const res = await _sbFetch(SUPABASE_URL + '/rest/v1/' + table + q, { headers: SB_HEADERS });
+    if (!res.ok) throw new Error(await res.text());
+    return await res.json();
+}
+async function sbInsert(table, body, customHeaders, customTimeout) {
+    const res = await _sbFetch(SUPABASE_URL + '/rest/v1/' + table, {
+        method: 'POST', headers: customHeaders || SB_HEADERS, body: JSON.stringify(body)
+    }, 0, customTimeout || 20000);
+    if (!res.ok) throw new Error(await res.text());
+    try { return await res.json(); } catch(e) { return null; }
+}
+async function sbPatch(table, filter, body) {
+    const res = await _sbFetch(SUPABASE_URL + '/rest/v1/' + table + '?' + filter, {
+        method: 'PATCH', headers: SB_HEADERS, body: JSON.stringify(body)
+    });
+    if (!res.ok) throw new Error(await res.text());
+    return res;
+}
+async function sbDelete(table, filter) {
+    const res = await _sbFetch(SUPABASE_URL + '/rest/v1/' + table + '?' + filter, {
+        method: 'DELETE', headers: SB_HEADERS
+    });
+    if (!res.ok) throw new Error(await res.text());
+}
+
+function esc(s) { var s2=String(s||''); s2=s2.replace(/"/g,'&quot;'); s2=s2.replace(/\x3C/g,'&lt;'); s2=s2.replace(/\x3E/g,'&gt;'); return s2; }
+
+let _toastT;
+function toast(msg, color) {
+    color = color || '#eee';
+    const el = document.getElementById('toast');
+    el.innerText = msg; el.style.color = color; el.classList.add('show');
+    clearTimeout(_toastT);
+    _toastT = setTimeout(function(){ el.classList.remove('show'); }, 2800);
+}
+
+// =====================================================
+// SESSION REVENDEUR — en mémoire uniquement
+// =====================================================
+let CURRENT_RESELLER = null;
+
+function _resellerScope() {
+    if (!CURRENT_RESELLER) throw new Error('Session expirée — reconnectez-vous');
+    return 'reseller_id=eq.' + encodeURIComponent(CURRENT_RESELLER.reseller_id);
+}
+
+// =====================================================
+// LOGIN
+// =====================================================
+async function adminLogin() {
+    const email = (document.getElementById('login-email').value || '').trim().toLowerCase();
+    const pass  = document.getElementById('login-pass').value || '';
+    const errEl = document.getElementById('login-error');
+    errEl.innerText = '';
+
+    if (!email || !pass) {
+        errEl.innerText = '⚠️ Email et mot de passe requis';
+        return;
+    }
+
+    const btn = document.getElementById('btn-login');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Connexion...';
+
+    try {
+        const rows = await sbGet('resellers', 'admin_email=eq.' + encodeURIComponent(email) + '&select=*');
+        const r = rows && rows[0];
+
+        if (!r) {
+            errEl.innerText = '❌ Aucun compte revendeur avec cet email';
+        } else if (String(r.admin_password) !== String(pass)) {
+            errEl.innerText = '❌ Mot de passe incorrect';
+        } else if (!r.actif) {
+            errEl.innerText = '🚫 Ce compte revendeur est désactivé. Contactez le support.';
+        } else {
+            CURRENT_RESELLER = r;
+            document.getElementById('login-overlay').style.display = 'none';
+            document.getElementById('dashboard').style.display     = 'block';
+            _applyResellerHeader(r);
+            await loadAllData();
+            _startPresenceRefresh();
+        }
+    } catch(e) {
+        errEl.innerText = '❌ ' + e.message;
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-sign-in-alt"></i> SE CONNECTER';
+    }
+}
+
+function logoutReseller() {
+    if (!confirm('Se déconnecter de votre espace revendeur ?')) return;
+    CURRENT_RESELLER = null;
+    if (_presenceInterval) clearInterval(_presenceInterval);
+    document.getElementById('login-email').value = '';
+    document.getElementById('login-pass').value  = '';
+    document.getElementById('dashboard').style.display     = 'none';
+    document.getElementById('login-overlay').style.display = 'flex';
+}
+
+function _applyResellerHeader(r) {
+    document.getElementById('header-name').innerText = r.name || 'REVENDEUR';
+    document.getElementById('header-rsid').innerText = r.reseller_id || '—';
+    const wrap = document.getElementById('header-logo-wrap');
+    if (r.logo) {
+        wrap.innerHTML = '<img src="' + esc(r.logo) + '" class="logo-img" onerror="this.parentElement.innerHTML=\'<span class=&quot;logo-fallback&quot;><i class=&quot;fas fa-store&quot;></i></span>\'">';
+    } else {
+        wrap.innerHTML = '<span class="logo-fallback"><i class="fas fa-store"></i></span>';
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    var btn = document.getElementById('btn-login');
+    if (btn) btn.addEventListener('click', adminLogin);
+    ['login-email','login-pass'].forEach(function(id){
+        var inp = document.getElementById(id);
+        if (inp) inp.addEventListener('keyup', function(e){ if (e.key === 'Enter') adminLogin(); });
+    });
+});
+
+// =====================================================
+// PRÉSENCE
+// =====================================================
+function _presRelTime(date) {
+    var diff = Math.floor((Date.now() - date.getTime()) / 1000);
+    if (diff < 60) return 'À l\'instant';
+    if (diff < 3600) return Math.floor(diff/60) + ' min';
+    if (diff < 86400) return Math.floor(diff/3600) + ' h';
+    return Math.floor(diff/86400) + ' j';
+}
+function _presFmtDur(sec) {
+    sec = sec || 0;
+    var h = Math.floor(sec/3600), m = Math.floor((sec%3600)/60);
+    if (h > 0) return h + 'h' + String(m).padStart(2,'0');
+    return m + ' min';
+}
+let _presenceInterval = null;
+function _startPresenceRefresh() {
+    if (_presenceInterval) clearInterval(_presenceInterval);
+    _presenceInterval = setInterval(function(){
+        if (CURRENT_RESELLER) loadAllData();
+    }, 30000);
+}
+
+// =====================================================
+// CHARGEMENT GLOBAL
+// =====================================================
+var globalUsers = [];
+
+async function loadAllData() {
+    if (!CURRENT_RESELLER) return;
+    try {
+        var scope = _resellerScope();
+        var results = await Promise.allSettled([
+            sbGet('utilisateurs', 'select=*&order=date_activation.desc&' + scope),
+            sbGet('config', 'id=eq.1&select=message_accueil'),
+            sbGet('presence', 'select=cle,last_seen,total_secondes')
+        ]);
+
+        globalUsers = (results[0].status === 'fulfilled' ? results[0].value : null) || [];
+        var cfg      = (results[1].status === 'fulfilled' ? results[1].value : null);
+
+        var presenceRows = (results[2].status === 'fulfilled' ? results[2].value : null) || [];
+        var presenceMap = {};
+        var nowTs = Date.now();
+        var onlineCount = 0;
+        var userKeys = {};
+        globalUsers.forEach(function(u){ userKeys[u.cle] = true; });
+        presenceRows.forEach(function(p) {
+            if (!userKeys[p.cle]) return;
+            var isOnline = false;
+            if (p.last_seen) {
+                var lastSeenDate = new Date(p.last_seen);
+                var diff = nowTs - lastSeenDate.getTime();
+                isOnline = lastSeenDate.getFullYear() >= 2020 && diff < 75 * 1000;
+            }
+            if (isOnline) onlineCount++;
+            presenceMap[p.cle] = { last_seen: p.last_seen, total_secondes: p.total_secondes || 0, online: isOnline };
+        });
+        document.getElementById('st-online').innerText = onlineCount;
+
+        var total  = globalUsers.length;
+        var vie    = globalUsers.filter(function(u){ return u.duree === 'VIE'; }).length;
+        var active = globalUsers.filter(function(u){ return u.duree === 'VIE' || parseInt(u.duree) > 0; }).length;
+        document.getElementById('st-total').innerText  = total;
+        document.getElementById('st-active').innerText = active;
+        document.getElementById('st-vie').innerText    = vie;
+
+        if (cfg && cfg[0]) {
+            var msgInput = document.getElementById('global-msg-input');
+            if (msgInput) msgInput.value = cfg[0].message_accueil || '';
+        }
+
+        _renderUsersTable(presenceMap);
+        await loadTarifs();
+        _fillBrandingForm();
+
+    } catch(e) {
+        toast('❌ Erreur chargement : ' + e.message, '#ff6b6b');
+        console.error(e);
+    }
+}
+
+function _renderUsersTable(presenceMap) {
+    var tbody = document.getElementById('users-body');
+    tbody.innerHTML = '';
+    globalUsers.forEach(function(u) {
+        var devCount = u.appareils ? u.appareils.split(',').filter(function(d){ return d.trim(); }).length : 0;
+        var isVie    = u.duree === 'VIE';
+        var badgeCls, badgeTxt;
+        if (isVie) {
+            badgeCls = 'badge-vie';
+            badgeTxt = 'À VIE';
+        } else {
+            var totalDays = parseInt(u.duree) || 0;
+            var remaining = 0;
+            if (u.date_activation && totalDays > 0) {
+                var start  = new Date(u.date_activation);
+                var expiry = new Date(start.getTime() + totalDays * 86400000);
+                var today  = new Date(); today.setHours(0,0,0,0); expiry.setHours(0,0,0,0);
+                remaining  = Math.ceil((expiry - today) / 86400000);
+            }
+            if (remaining > 0) { badgeCls = 'badge-active'; badgeTxt = remaining + 'j restant' + (remaining > 1 ? 's' : ''); }
+            else               { badgeCls = 'badge-exp';    badgeTxt = 'EXPIRÉ'; }
+        }
+        var cle = esc(u.cle);
+        var msg = esc(u.message || '');
+        var scr = u.max_ecrans || 1;
+
+        var pres = presenceMap[u.cle] || null;
+        var onlineBadge, derniereVue, dureeTotale;
+        if (pres) {
+            onlineBadge = pres.online
+                ? '<span class="badge-online"><span class="dot-online"></span>EN LIGNE</span>'
+                : '<span class="badge-offline"><span class="dot-offline"></span>HORS LIGNE</span>';
+            derniereVue = pres.last_seen ? _presRelTime(new Date(pres.last_seen)) : '—';
+            dureeTotale = _presFmtDur(pres.total_secondes);
+        } else {
+            onlineBadge = '<span class="badge-offline"><span class="dot-offline"></span>HORS LIGNE</span>';
+            derniereVue = '<span style="color:#333;">Jamais</span>';
+            dureeTotale = '<span style="color:#333;">—</span>';
+        }
+
+        var tr = document.createElement('tr');
+        tr.innerHTML =
+            '<td style="font-weight:700;color:white;font-family:monospace;letter-spacing:1px;">' + cle + '</td>' +
+            '<td><span class="' + badgeCls + '">' + badgeTxt + '</span></td>' +
+            '<td>' + scr + '</td>' +
+            '<td style="color:#666;font-size:12px;">' + devCount + ' / ' + scr + ' connecté(s)</td>' +
+            '<td style="color:#555;font-size:11px;">' + (u.date_activation || '—') + '</td>' +
+            '<td style="color:#aaa;font-size:11px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="' + msg + '">' + (msg || '—') + '</td>' +
+            '<td>' + onlineBadge + '</td>' +
+            '<td><span class="presence-time">' + derniereVue + '</span></td>' +
+            '<td><span class="presence-dur">' + dureeTotale + '</span></td>' +
+            '<td style="white-space:nowrap;">' +
+                '<button class="action-btn btn-pdf"  onclick="generatePDF(\'' + cle + '\',\'' + u.duree + '\',\'' + scr + '\')" title="PDF"><i class="fas fa-file-pdf"></i></button> ' +
+                '<button class="action-btn btn-edit" onclick="editUser(\'' + cle + '\',\'' + u.duree + '\',\'' + scr + '\',\'' + msg + '\')" title="Modifier"><i class="fas fa-edit"></i></button> ' +
+                '<button class="action-btn btn-rst"  onclick="resetDevices(\'' + cle + '\')" title="Reset appareils"><i class="fas fa-unlock"></i></button> ' +
+                '<button class="action-btn btn-del"  onclick="deleteUser(\'' + cle + '\')" title="Supprimer"><i class="fas fa-trash"></i></button>' +
+            '</td>';
+        tbody.appendChild(tr);
+    });
+}
+
+// =====================================================
+// CLIENTS — CRUD scopé à reseller_id
+// =====================================================
+async function addUser() {
+    if (!CURRENT_RESELLER) return;
+    let key = document.getElementById('new-key').value.trim().toUpperCase();
+    if (!key) {
+        const c = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+        let r = "";
+        for (let i = 0; i < 6; i++) r += c.charAt(Math.floor(Math.random() * c.length));
+        key = "BOX-" + r;
+    }
+    const days    = document.getElementById('new-days').value;
+    const screens = parseInt(document.getElementById('new-screens').value);
+    const msg     = document.getElementById('new-msg').value.trim();
+
+    if (!confirm('Créer l\'abonnement "' + key + '" (' + days + ' j / ' + screens + ' écran(s)) ?')) return;
+
+    try {
+        await sbInsert('utilisateurs', {
+            cle:             key,
+            duree:           days,
+            appareils:       '',
+            date_activation: new Date().toISOString().split('T')[0],
+            max_ecrans:      screens,
+            message:         msg,
+            reseller_id:     CURRENT_RESELLER.reseller_id
+        });
+        toast('✅ Client ' + key + ' créé !', '#2ecc71');
+        generatePDF(key, days, screens);
+        document.getElementById('new-key').value = '';
+        document.getElementById('new-msg').value = '';
+        await loadAllData();
+    } catch(e) {
+        toast('❌ ' + e.message, '#ff6b6b');
+    }
+}
+
+async function deleteUser(k) {
+    if (!confirm('Supprimer le client "' + k + '" définitivement ?')) return;
+    try {
+        await sbDelete('utilisateurs', 'cle=eq.' + encodeURIComponent(k) + '&' + _resellerScope());
+        toast('🗑 Client supprimé', '#ff6b6b');
+        await loadAllData();
+    } catch(e) { toast('❌ ' + e.message, '#ff6b6b'); }
+}
+
+async function editUser(k, oldD, oldS, oldMsg) {
+    const d   = prompt('Durée (jours ou VIE) :', oldD);   if (d === null) return;
+    const s   = prompt('Nb écrans :', oldS);               if (s === null) return;
+    const msg = prompt('Message perso (opt.) :', oldMsg);  if (msg === null) return;
+    try {
+        await sbPatch('utilisateurs', 'cle=eq.' + encodeURIComponent(k) + '&' + _resellerScope(), {
+            duree: d, max_ecrans: parseInt(s), message: msg
+        });
+        toast('✅ Client modifié', '#2ecc71');
+        await loadAllData();
+    } catch(e) { toast('❌ ' + e.message, '#ff6b6b'); }
+}
+
+async function resetDevices(k) {
+    if (!confirm('Réinitialiser les appareils de "' + k + '" ?')) return;
+    try {
+        await sbPatch('utilisateurs', 'cle=eq.' + encodeURIComponent(k) + '&' + _resellerScope(), { appareils: '' });
+        toast('🔓 Appareils réinitialisés', '#2ecc71');
+        await loadAllData();
+    } catch(e) { toast('❌ ' + e.message, '#ff6b6b'); }
+}
+
+// =====================================================
+// BACKUP CSV — uniquement MES clients
+// =====================================================
+function downloadBackup() {
+    if (!globalUsers.length) { toast('⚠️ Aucune donnée', '#ffd700'); return; }
+    let csv = "CLE,DUREE,APPAREILS,DATE_ACTIVATION,MAX_ECRANS,MESSAGE\n";
+    globalUsers.forEach(function(u) {
+        csv += [u.cle, u.duree, u.appareils || '', u.date_activation || '', u.max_ecrans || 1, u.message || '']
+            .map(function(v){ return '"' + String(v).replace(/"/g, '""') + '"'; }).join(',') + '\n';
+    });
+    const blob = new Blob(["\uFEFF" + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'backup_' + (CURRENT_RESELLER ? CURRENT_RESELLER.reseller_id : 'revendeur') + '_' + new Date().toISOString().slice(0,10) + '.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+    toast('💾 Backup téléchargé', '#2ecc71');
+}
+
+// =====================================================
+// PDF GENERATOR (certificat client — branding du revendeur)
+// =====================================================
+function generatePDF(key, days, screens) {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    const now = new Date();
+    const dateStr = now.toLocaleDateString('fr-FR') + ' à ' + now.toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit' });
+    const platformName = (CURRENT_RESELLER && CURRENT_RESELLER.name) ? CURRENT_RESELLER.name.toUpperCase() : 'MY BOX TV';
+    const contactPhone = (CURRENT_RESELLER && CURRENT_RESELLER.phone) ? CURRENT_RESELLER.phone : '—';
+
+    doc.setFillColor(20, 20, 20); doc.rect(0, 0, 210, 42, 'F');
+    doc.setTextColor(255,255,255); doc.setFontSize(26); doc.setFont("helvetica","bold");
+    doc.text(platformName, 105, 20, { align: "center" });
+    doc.setFontSize(12); doc.setTextColor(0,191,255);
+    doc.text("CERTIFICAT D'ABONNEMENT", 105, 31, { align: "center" });
+    doc.setFontSize(9); doc.setTextColor(150,150,150);
+    doc.text("Émis le " + dateStr, 105, 39, { align: "center" });
+
+    doc.setTextColor(0,0,0); doc.setFontSize(14); doc.setFont("helvetica","normal");
+    doc.text("VOTRE ID DE CONNEXION :", 105, 60, { align: "center" });
+    doc.setFillColor(240,240,240); doc.setDrawColor(0,191,255); doc.setLineWidth(1.5); doc.rect(35, 65, 140, 27, 'FD');
+    doc.setFont("courier","bold"); doc.setFontSize(30); doc.setTextColor(0,128,200);
+    doc.text(key, 105, 83, { align: "center" });
+
+    doc.setFont("helvetica","normal"); doc.setTextColor(0,0,0); doc.setFontSize(12); doc.setLineWidth(0.1);
+    doc.text("VALIDITÉ : " + days + " Jours", 45, 106);
+    doc.text("ÉCRANS : " + screens, 125, 106);
+    doc.setDrawColor(200,200,200); doc.line(20, 115, 190, 115);
+
+    doc.setFontSize(14); doc.setFont("helvetica","bold"); doc.text("INSTRUCTIONS D'ACCÈS", 20, 128);
+    doc.setFontSize(11); doc.setFont("helvetica","normal");
+    doc.text("1. Connectez votre appareil à Internet.", 22, 140);
+    doc.text("2. Ouvrez l'application " + platformName + ".", 22, 150);
+    doc.text("3. Entrez votre ID ci-dessus dans le champ de connexion.", 22, 160);
+    doc.text("4. Profitez de votre abonnement !", 22, 170);
+    doc.line(20, 180, 190, 180);
+
+    doc.setFontSize(9); doc.setTextColor(130,130,130); doc.setFont("helvetica","italic");
+    doc.text("Conservez précieusement cet ID. Ne le partagez pas. Valide sur " + screens + " appareil(s) simultané(s).", 105, 190, { align: "center" });
+
+    doc.setFillColor(245,245,245); doc.rect(0, 255, 210, 45, 'F');
+    doc.setTextColor(0,128,200); doc.setFontSize(12); doc.setFont("helvetica","bold");
+    doc.text("SUPPORT TECHNIQUE — WHATSAPP", 105, 268, { align: "center" });
+    doc.setTextColor(0,0,0); doc.setFont("helvetica","normal"); doc.setFontSize(14);
+    doc.text(contactPhone, 105, 280, { align: "center" });
+    doc.setFontSize(9); doc.setTextColor(150,150,150);
+    doc.text("Merci de votre confiance !", 105, 291, { align: "center" });
+}
+
+// =====================================================
+// TARIFS — propres à ce revendeur (table tarifs.reseller_id)
+// =====================================================
+let globalTarifs = [];
+
+function openTarifModal(tarif) {
+    document.getElementById('tf-edit-id').value       = tarif ? tarif.id          : '';
+    document.getElementById('tf-label-ecran').value   = tarif ? tarif.label_ecran : '';
+    document.getElementById('tf-label-duree').value   = tarif ? tarif.label_duree : '';
+    document.getElementById('tf-screens').value       = tarif ? tarif.screens     : '';
+    document.getElementById('tf-days').value          = tarif ? tarif.days        : '';
+    document.getElementById('tf-prix').value          = tarif ? tarif.prix        : '';
+    document.getElementById('tf-prix-promo').value    = tarif && tarif.prix_promo ? tarif.prix_promo : '';
+    document.getElementById('tf-badge').value         = tarif ? (tarif.badge || '') : '';
+    const color = (tarif && tarif.badge_color) ? tarif.badge_color : '#00bfff';
+    document.getElementById('tf-badge-color').value      = color;
+    document.getElementById('tf-badge-color-text').value = color;
+    document.getElementById('tf-ordre').value         = tarif ? tarif.ordre       : '10';
+    document.getElementById('tf-actif').checked       = tarif ? tarif.actif       : true;
+    document.getElementById('tarif-modal-title').innerHTML = tarif
+        ? '<i class="fas fa-edit"></i> MODIFIER LE TARIF'
+        : '<i class="fas fa-plus"></i> NOUVEAU TARIF';
+    document.getElementById('tarif-modal-overlay').classList.add('open');
+    document.getElementById('tarif-modal-overlay').style.display = 'flex';
+    document.getElementById('tf-badge-color').oninput = function(){
+        document.getElementById('tf-badge-color-text').value = this.value;
+    };
+}
+
+function closeTarifModal() {
+    document.getElementById('tarif-modal-overlay').classList.remove('open');
+    document.getElementById('tarif-modal-overlay').style.display = 'none';
+}
+
+async function saveTarif() {
+    if (!CURRENT_RESELLER) return;
+    const id          = document.getElementById('tf-edit-id').value;
+    const label_ecran = document.getElementById('tf-label-ecran').value.trim();
+    const label_duree = document.getElementById('tf-label-duree').value.trim();
+    const screens     = parseInt(document.getElementById('tf-screens').value);
+    const days        = parseInt(document.getElementById('tf-days').value);
+    const prix        = parseInt(document.getElementById('tf-prix').value);
+    const promoRaw    = document.getElementById('tf-prix-promo').value.trim();
+    const prix_promo  = promoRaw ? parseInt(promoRaw) : null;
+    const badge       = document.getElementById('tf-badge').value.trim() || null;
+    const badge_color = document.getElementById('tf-badge-color-text').value.trim() || '#00bfff';
+    const ordre       = parseInt(document.getElementById('tf-ordre').value) || 10;
+    const actif       = document.getElementById('tf-actif').checked;
+
+    if (!label_ecran || !label_duree || !screens || !days || !prix) {
+        toast('⚠️ Champs obligatoires manquants', '#ffd700'); return;
+    }
+    const payload = {
+        screens: screens, days: days, label_ecran: label_ecran, label_duree: label_duree,
+        prix: prix, prix_promo: prix_promo, badge: badge, badge_color: badge_color,
+        actif: actif, ordre: ordre, reseller_id: CURRENT_RESELLER.reseller_id
+    };
+
+    try {
+        if (id) {
+            await sbPatch('tarifs', 'id=eq.' + id + '&' + _resellerScope(), payload);
+            toast('✅ Tarif modifié', '#2ecc71');
+        } else {
+            await sbInsert('tarifs', payload);
+            toast('✅ Tarif ajouté', '#2ecc71');
+        }
+        closeTarifModal();
+        await loadTarifs();
+    } catch(e) { toast('❌ ' + e.message, '#ff6b6b'); }
+}
+
+async function deleteTarif(id) {
+    if (!confirm('Supprimer ce tarif définitivement ?')) return;
+    try {
+        await sbDelete('tarifs', 'id=eq.' + id + '&' + _resellerScope());
+        toast('🗑 Tarif supprimé', '#ff6b6b');
+        await loadTarifs();
+    } catch(e) { toast('❌ ' + e.message, '#ff6b6b'); }
+}
+
+async function toggleTarifActif(tarif) {
+    try {
+        await sbPatch('tarifs', 'id=eq.' + tarif.id + '&' + _resellerScope(), { actif: !tarif.actif });
+        toast((!tarif.actif ? '✅ Tarif activé' : '⛔ Tarif désactivé'), '#2ecc71');
+        await loadTarifs();
+    } catch(e) { toast('❌ ' + e.message, '#ff6b6b'); }
+}
+
+async function loadTarifs() {
+    if (!CURRENT_RESELLER) return;
+    try {
+        globalTarifs = await sbGet('tarifs', 'select=*&order=ordre.asc&' + _resellerScope());
+        renderTarifs();
+        var stTarifs = document.getElementById('st-tarifs');
+        if (stTarifs) stTarifs.innerText = globalTarifs.filter(function(t){ return t.actif; }).length;
+    } catch(e) { toast('⚠️ Tarifs : ' + e.message, '#ffd700'); }
+}
+
+function renderTarifs() {
+    var grid = document.getElementById('tarifs-grid');
+    grid.innerHTML = '';
+    if (!globalTarifs.length) {
+        grid.innerHTML = '<div style="color:#333;text-align:center;padding:30px;grid-column:1/-1;font-size:13px;"><i class="fas fa-tags" style="font-size:24px;display:block;margin-bottom:10px;"></i>Aucun tarif — créez votre première offre !</div>';
+    }
+    globalTarifs.forEach(function(t) {
+        var hasBadge  = t.badge && t.badge.trim();
+        var hasPromo  = t.prix_promo !== null && t.prix_promo !== undefined;
+        var priceShow = hasPromo ? t.prix_promo : t.prix;
+        var card = document.createElement('div');
+        card.className = 'tarif-card' + (t.actif ? '' : ' inactive');
+        var html = '';
+        if (hasBadge) html += '<span class="card-badge" style="background:' + esc(t.badge_color||'#00bfff') + ';">' + esc(t.badge) + '</span>';
+        html += '<div style="font-size:12px;color:#666;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px;">' + esc(t.label_ecran) + ' — ' + esc(t.label_duree) + '</div>';
+        if (hasPromo) html += '<div class="card-price-old">' + Number(t.prix).toLocaleString('fr') + ' FCFA</div>';
+        html += '<div class="card-price">' + Number(priceShow).toLocaleString('fr') + ' <span style="font-size:14px;color:#888;">FCFA</span></div>';
+        html += '<div class="card-label">' + t.screens + ' écran(s) — ' + t.days + ' jours</div>';
+        html += '<div class="card-actions">';
+        html += '<button class="action-btn btn-edit" onclick="openTarifModal(globalTarifs.find(function(x){return x.id===' + t.id + '}))" title="Modifier"><i class="fas fa-edit"></i></button>';
+        html += '<button class="tf-toggle-btn" onclick="toggleTarifActif(globalTarifs.find(function(x){return x.id===' + t.id + '}))">' + (t.actif ? '<i class="fas fa-eye-slash"></i> Désactiver' : '<i class="fas fa-eye"></i> Activer') + '</button>';
+        html += '<button class="action-btn btn-del" onclick="deleteTarif(' + t.id + ')" title="Supprimer"><i class="fas fa-trash"></i></button>';
+        html += '</div>';
+        card.innerHTML = html;
+        grid.appendChild(card);
+    });
+
+    var tbody = document.getElementById('tarifs-body');
+    tbody.innerHTML = '';
+    globalTarifs.forEach(function(t) {
+        var hasPromo = t.prix_promo !== null && t.prix_promo !== undefined;
+        var tr = document.createElement('tr');
+        var badgeCell = t.badge
+            ? '<span style="background:' + esc(t.badge_color||'#00bfff') + ';padding:2px 8px;border-radius:12px;font-size:11px;font-weight:700;">' + esc(t.badge) + '</span>'
+            : '<span style="color:#444">—</span>';
+        tr.innerHTML =
+            '<td style="color:#555;font-size:12px;">' + t.id + '</td>' +
+            '<td style="font-weight:700;">' + esc(t.label_ecran) + ' <span style="color:#666;font-weight:400;">/ ' + esc(t.label_duree) + '</span></td>' +
+            '<td>' + t.screens + '</td>' +
+            '<td>' + t.days + '</td>' +
+            '<td style="font-weight:700;color:#fff;">' + Number(t.prix).toLocaleString('fr') + ' FCFA</td>' +
+            '<td style="color:#00bfff;">' + (hasPromo ? Number(t.prix_promo).toLocaleString('fr') + ' FCFA' : '<span style="color:#444">—</span>') + '</td>' +
+            '<td>' + badgeCell + '</td>' +
+            '<td style="color:#666;">' + t.ordre + '</td>' +
+            '<td><span style="color:' + (t.actif?'#2ecc71':'#ff4444') + ';font-weight:700;font-size:12px;">' + (t.actif?'✅ OUI':'⛔ NON') + '</span></td>' +
+            '<td style="white-space:nowrap;">' +
+                '<button class="action-btn btn-edit" onclick="openTarifModal(globalTarifs.find(function(x){return x.id===' + t.id + '}))" title="Modifier"><i class="fas fa-edit"></i></button>' +
+                '<button class="action-btn btn-del" onclick="deleteTarif(' + t.id + ')" title="Supprimer"><i class="fas fa-trash"></i></button>' +
+            '</td>';
+        tbody.appendChild(tr);
+    });
+}
+
+// =====================================================
+// BRANDING & PAIEMENT — édite SA PROPRE fiche `resellers`
+// =====================================================
+function _fillBrandingForm() {
+    if (!CURRENT_RESELLER) return;
+    var r = CURRENT_RESELLER;
+    document.getElementById('bd-logo').value         = r.logo || '';
+    document.getElementById('bd-name').value         = r.name || '';
+    document.getElementById('bd-phone').value        = r.phone || '';
+    document.getElementById('bd-pay-provider').value = r.payment_provider || '';
+    document.getElementById('bd-pay-pubkey').value   = r.payment_public_key || '';
+    document.getElementById('bd-pay-siteid').value   = r.payment_site_id || '';
+    document.getElementById('bd-m3u').value          = r.m3u_url ? r.m3u_url : '';
+    if (!r.m3u_url) document.getElementById('bd-m3u').placeholder = 'En attente de configuration par le Super Admin';
+    _updateBrandLogoPreview();
+    _updatePayStatusPill();
+}
+
+function _updateBrandLogoPreview() {
+    var url  = document.getElementById('bd-logo').value.trim();
+    var wrap = document.getElementById('brand-logo-preview-wrap');
+    if (url) {
+        wrap.innerHTML = '<img src="' + esc(url) + '" class="brand-logo-preview" onerror="this.parentElement.innerHTML=\'<span class=&quot;brand-logo-preview-empty&quot;><i class=&quot;fas fa-store&quot;></i></span>\'">';
+    } else {
+        wrap.innerHTML = '<span class="brand-logo-preview-empty"><i class="fas fa-store"></i></span>';
+    }
+}
+
+function _updatePayStatusPill() {
+    var provider = document.getElementById('bd-pay-provider').value;
+    var pill = document.getElementById('bd-pay-status-pill');
+    if (provider) {
+        pill.className = 'status-pill on';
+        pill.innerHTML = '<i class="fas fa-check-circle"></i> ' + provider.toUpperCase() + ' actif';
+    } else {
+        pill.className = 'status-pill off';
+        pill.innerHTML = '<i class="fas fa-times-circle"></i> Paiement non configuré';
+    }
+}
+document.addEventListener('DOMContentLoaded', function(){
+    var sel = document.getElementById('bd-pay-provider');
+    if (sel) sel.addEventListener('change', _updatePayStatusPill);
+});
+
+async function saveBranding() {
+    if (!CURRENT_RESELLER) return;
+    var name     = document.getElementById('bd-name').value.trim();
+    var logo     = document.getElementById('bd-logo').value.trim();
+    var phone    = document.getElementById('bd-phone').value.trim();
+    var provider = document.getElementById('bd-pay-provider').value;
+    var pubkey   = document.getElementById('bd-pay-pubkey').value.trim();
+    var siteid   = document.getElementById('bd-pay-siteid').value.trim();
+
+    if (!name) { toast('⚠️ Le nom de la plateforme est obligatoire', '#ffd700'); return; }
+
+    var payload = {
+        name: name, logo: logo, phone: phone,
+        payment_provider: provider, payment_public_key: pubkey, payment_site_id: siteid
+    };
+
+    try {
+        await sbPatch('resellers', 'id=eq.' + CURRENT_RESELLER.id, payload);
+        Object.assign(CURRENT_RESELLER, payload);
+        _applyResellerHeader(CURRENT_RESELLER);
+        _updatePayStatusPill();
+        toast('✅ Informations enregistrées', '#2ecc71');
+    } catch(e) { toast('❌ ' + e.message, '#ff6b6b'); }
+}
+
+async function changeResellerPassword() {
+    if (!CURRENT_RESELLER) return;
+    var newPass = document.getElementById('bd-new-pass').value.trim();
+    if (!newPass) { toast('⚠️ Entrez un nouveau mot de passe', '#ffd700'); return; }
+    if (newPass.length < 4) { toast('⚠️ Mot de passe trop court (4 caractères min.)', '#ffd700'); return; }
+    if (!confirm('Changer votre mot de passe de connexion ?')) return;
+    try {
+        await sbPatch('resellers', 'id=eq.' + CURRENT_RESELLER.id, { admin_password: newPass });
+        CURRENT_RESELLER.admin_password = newPass;
+        document.getElementById('bd-new-pass').value = '';
+        toast('✅ Mot de passe modifié', '#2ecc71');
+    } catch(e) { toast('❌ ' + e.message, '#ff6b6b'); }
+}
+
+// =====================================================
+// NAVIGATION ONGLETS
+// =====================================================
+function showTab(id, e) {
+    var ev = e || window.event;
+    document.querySelectorAll('.section').forEach(function(s){ s.classList.remove('active'); });
+    document.querySelectorAll('.tab-btn').forEach(function(b){ b.classList.remove('active'); });
+    var sec = document.getElementById(id);
+    if (sec) sec.classList.add('active');
+    if (ev && ev.currentTarget) ev.currentTarget.classList.add('active');
+    else {
+        document.querySelectorAll('.tab-btn').forEach(function(b){
+            if (b.getAttribute('onclick') && b.getAttribute('onclick').includes("'" + id + "'")) b.classList.add('active');
+        });
+    }
+}
+</script>
+</body>
+</html>
